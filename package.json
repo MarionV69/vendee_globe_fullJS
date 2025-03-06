@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "express": "^4.21.2",
     "sqlite-async": "^1.2.0",
     "sqlite3": "^5.1.7",
     "xlsx": "^0.18.5"
