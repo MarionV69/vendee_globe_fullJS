@@ -1,13 +1,10 @@
 import { readFileSync, writeFileSync } from "fs";
-import { db } from "./createDB.js";
-import sqlite3 from "sqlite3";
-
-const sql3 = sqlite3.verbose();
+import { DATABASE_FILE, db } from "./createDB.js";
 
 const json = readFileSync("data.json");
 const allData = JSON.parse(json);
 
-function insertData(allData) {
+async function insertData(allData) {
   const skippers = [];
   const rankings = [];
 
@@ -56,98 +53,91 @@ function insertData(allData) {
     }
   }
 
-  db.serialize(() => {
-    const stmt1 = db.prepare(
-      "INSERT OR IGNORE INTO skipper (nationality, name, boat) VALUES (? , ?, ?)"
-    );
-    const stmt2 = db.prepare("SELECT id FROM skipper AS s WHERE s.name = ?");
-    const stmt3 = db.prepare(
-      `INSERT INTO ranking (
-        skipper_id,
-        timestamp,
-        rank,
-        latitude,
-        longitude,
-        heading_degree,
-        speed_kts,
-        speed_4h_kts,
-        speed_24h_kts,
-        distance_4h_nm,
-        distance_24h_nm,
-        distance_to_finish_nm,
-        distance_to_leader_nm,
-        arrival_date,
-        race_time,
-        gap_to_first,
-        gap_to_previous,
-        over_ortho_speed,
-        over_ortho_distance,
-        over_ground_speed,
-        over_ground_distance
-        ) VALUES (
-        :skipper_id,
-        :timestamp,
-        :rank,
-        :latitude,
-        :longitude,
-        :heading_degree,
-        :speed_kts,
-        :speed_4h_kts,
-        :speed_24h_kts,
-        :distance_4h_nm,
-        :distance_24h_nm,
-        :distance_to_finish_nm,
-        :distance_to_leader_nm,
-        :arrival_date,
-        :race_time,
-        :gap_to_first,
-        :gap_to_previous,
-        :over_ortho_speed,
-        :over_ortho_distance,
-        :over_ground_speed,
-        :over_ground_distance`
-    );
+  const stmt1 = await db.prepare(
+    "INSERT OR IGNORE INTO skipper (nationality, name, boat) VALUES (?, ?, ?)"
+  );
 
-    for (const skipper of skippers) {
-      stmt1.run(skipper.nationality, skipper.name, skipper.boat, (err) => {
-        if (err) console.error("Error inserting skipper:", err);
-      });
+  for (const skipper of skippers) {
+    try {
+      await stmt1.run(skipper.nationality, skipper.name, skipper.boat);
+    } catch (err) {
+      console.error("Error inserting skipper:", err);
     }
-    stmt1.finalize();
+  }
+  await stmt1.finalize();
 
-    for (const ranking of rankings) {
-      stmt2.get(ranking.skipperName, (err, row) => {
-        if (err) console.log(err);
-        stmt3.run({
-          skipper_id: row.id,
-          timestamp: ranking.timeStamp,
-          rank: ranking.rank,
-          latitude: ranking.latitude,
-          longitude: ranking.longitude,
-          heading_degree: ranking.degree,
-          speed_kts: ranking.speed,
-          speed_4h_kts: ranking.speed4h,
-          speed_24h_kts: ranking.speed24h,
-          distance_4h_nm: ranking.distance4h,
-          distance_24h_nm: ranking.distance24h,
-          distance_to_finish_nm: ranking.distanceToFinish,
-          distance_to_leader_nm: ranking.distanceToLeader,
-          arrival_date: ranking.arrivalDate,
-          race_time: ranking.raceTime,
-          gap_to_first: ranking.gapToFirst,
-          gap_to_previous: ranking.gapToPrevious,
-          over_ortho_speed: ranking.overOrthoSpeed,
-          over_ortho_distance: ranking.overOrthoDistance,
-          over_ground_speed: ranking.overGroundSpeed,
-          over_ground_distance: ranking.overGroundDistance,
-        });
-      });
-    }
-    stmt2.finalize();
-    stmt3.finalize();
-  });
+  let skipperDatabase = {};
+  const stmt2 = await db.prepare("SELECT id, name FROM skipper");
+  try {
+    const rows = await stmt2.all();
+    for (const row of rows) skipperDatabase[row.name] = row.id;
+  } catch (error) {
+    console.error("Error select skipper:", error);
+  }
+  await stmt2.finalize();
+
+  const stmt3 = await db.prepare(
+    `INSERT OR IGNORE INTO ranking (
+      skipper_id,
+      timestamp,
+      rank,
+      latitude,
+      longitude,
+      heading_degree,
+      speed_kts,
+      speed_4h_kts,
+      speed_24h_kts,
+      distance_4h_nm,
+      distance_24h_nm,
+      distance_to_finish_nm,
+      distance_to_leader_nm,
+      arrival_date,
+      race_time,
+      gap_to_first,
+      gap_to_previous,
+      over_ortho_speed,
+      over_ortho_distance,
+      over_ground_speed,
+      over_ground_distance
+      ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+
+  const response = await Promise.all(
+    rankings.map((ranking) => {
+      return stmt3.run(
+        skipperDatabase[ranking.skipperName],
+        ranking.timeStamp,
+        ranking.rank,
+        ranking.latitude,
+        ranking.longitude,
+        ranking.degree,
+        ranking.speed,
+        ranking.speed4h,
+        ranking.speed24h,
+        ranking.distance4h,
+        ranking.distance24h,
+        ranking.distanceToFinish,
+        ranking.distanceToLeader,
+        ranking.arrivalDate,
+        ranking.raceTime,
+        ranking.gapToFirst,
+        ranking.gapToPrevious,
+        ranking.overOrthoSpeed,
+        ranking.overOrthoDistance,
+        ranking.overGroundSpeed,
+        ranking.overGroundDistance
+      );
+    })
+  );
+  // console.log(JSON.stringify(response, null, 4));
+
+  await stmt3.finalize();
 }
 
 /////////////////////////////////////////////////////
 
-insertData(allData);
+await db.open(DATABASE_FILE);
+
+await insertData(allData);
+
+await db.close();

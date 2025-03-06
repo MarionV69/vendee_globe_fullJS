@@ -1,15 +1,17 @@
-import sqlite3 from "sqlite3";
+// import sqlite3 from "sqlite3";
+import { Database } from "sqlite-async";
 import { existsSync } from "fs";
 
-const DATABASE_FILE = "vendeeglobe.db";
+export const DATABASE_FILE = "vendeeglobe.db";
 const needToSetup = !existsSync(`./${DATABASE_FILE}`);
 
-export const db = new sqlite3.Database(DATABASE_FILE);
+export const db = new Database();
 
 if (needToSetup) {
   console.log("setup");
-  db.serialize(() => {
-    db.run(
+  await db.open(DATABASE_FILE);
+  try {
+    await db.run(
       `CREATE TABLE IF NOT EXISTS skipper
             (
                 id INTEGER PRIMARY KEY NOT NULL,
@@ -17,13 +19,14 @@ if (needToSetup) {
                 name VARCHAR(50) NOT NULL,
                 boat VARCHAR(50) NOT NULL,
                 UNIQUE(nationality, name, boat)
-            );`,
-      (err) => {
-        if (err) console.error("Error creating skipper table:", err);
-      }
+            );`
     );
+  } catch (err) {
+    console.error("Error creating skipper table:", err);
+  }
 
-    db.run(
+  try {
+    await db.run(
       `CREATE TABLE IF NOT EXISTS ranking
             (
                 skipper_id INT NOT NULL,
@@ -49,10 +52,11 @@ if (needToSetup) {
                 over_ground_distance VARCHAR(50),
                 PRIMARY KEY (skipper_id, timestamp),
                 FOREIGN KEY (skipper_id) REFERENCES skipper(id) ON DELETE CASCADE
-            );`,
-      (err) => {
-        if (err) console.error("Error creating ranking_data table:", err);
-      }
+            );`
     );
-  });
+  } catch (err) {
+    console.error("Error creating ranking_data table:", err);
+  }
+
+  await db.close();
 }
