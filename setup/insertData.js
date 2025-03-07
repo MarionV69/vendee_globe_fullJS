@@ -11,44 +11,50 @@ async function insertData(allData) {
   for (const ranking of allData) {
     const timeStamp = ranking.timeStamp;
 
-    for (const raw of ranking.data) {
-      if (!raw.D) continue;
+    for (const row of ranking.data) {
+      if (!row.D) continue;
 
-      const name = raw.D.split("\r\n")[0];
-      let boat = raw.D.split("\r\n")[1];
+      const name = row.D.split("\r\n")[0];
+      let boat = row.D.split("\r\n")[1];
       if (name.includes("Skipper")) continue;
       if (boat.includes("STAND")) boat = "STAND AS ONE - Altivia";
 
       skippers.push({
-        nationality: raw.C,
+        nationality: row.C,
         name: name,
         boat: boat,
       });
 
-      if (raw.M && raw.M.includes("premier")) continue;
+      if (row.M && row.M.includes("premier")) continue;
+
+      // if (row.B.includes("ARV")) {
+      //   raceTime = raw.I;
+      // } else {
+      //   speed = raw.I;
+      // }
 
       rankings.push({
         timeStamp: timeStamp,
         skipperName: name,
-        rank: raw.B || null,
-        latitude: raw.F || null,
-        longitude: raw.G || null,
-        heading: raw.H || null,
-        speed: raw.I || null,
-        speed4h: raw.M || null,
-        speed24h: raw.Q || null,
-        distance4h: raw.O || null,
-        distance24h: raw.S || null,
-        distanceToFinish: raw.T || null,
-        distanceToLeader: raw.U || null,
-        arrivalDate: raw.H || null,
-        raceTime: raw.I || null,
-        gapToFirst: raw.N || null,
-        gapToPrevious: raw.P || null,
-        overOrthoSpeed: raw.Q || null,
-        overOrthoDistance: raw.R || null,
-        overGroundSpeed: raw.T || null,
-        overGroundDistance: raw.U || null,
+        rank: row.B || null,
+        latitude: row.F || null,
+        longitude: row.G || null,
+        heading: row.H || null,
+        speed: !row.B.includes("ARV") ? row.I : null,
+        speed4h: row.M || null,
+        speed24h: row.Q || null,
+        distance4h: row.O || null,
+        distance24h: row.S || null,
+        distanceToFinish: row.T || null,
+        distanceToLeader: row.U || null,
+        arrivalDate: row.H || null,
+        raceTime: row.B.includes("ARV") ? row.I : null,
+        gapToFirst: row.N || null,
+        gapToPrevious: row.P || null,
+        overOrthoSpeed: row.Q || null,
+        overOrthoDistance: row.R || null,
+        overGroundSpeed: row.T || null,
+        overGroundDistance: row.U || null,
       });
     }
   }
