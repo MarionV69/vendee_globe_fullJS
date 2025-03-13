@@ -27,16 +27,11 @@ async function insertData(allData) {
 
       if (row.M && row.M.includes("premier")) continue;
 
-      // if (row.B.includes("ARV")) {
-      //   raceTime = raw.I;
-      // } else {
-      //   speed = raw.I;
-      // }
-
       rankings.push({
         timeStamp: timeStamp,
         skipperName: name,
-        rank: row.B || null,
+        isArrived: row.B.includes("ARV") ? 1 : 0,
+        rank: parseInt(row.B) || null,
         latitude: row.F || null,
         longitude: row.G || null,
         heading: row.H || null,
@@ -86,6 +81,7 @@ async function insertData(allData) {
     `INSERT OR IGNORE INTO ranking (
       skipper_id,
       timestamp,
+      is_arrived,
       rank,
       latitude,
       longitude,
@@ -105,7 +101,7 @@ async function insertData(allData) {
       over_ortho_distance,
       over_ground_speed,
       over_ground_distance
-      ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
   const response = await Promise.all(
@@ -113,10 +109,11 @@ async function insertData(allData) {
       return stmt3.run(
         skipperDatabase[ranking.skipperName],
         ranking.timeStamp,
+        ranking.isArrived,
         ranking.rank,
         ranking.latitude,
         ranking.longitude,
-        ranking.degree,
+        ranking.heading,
         ranking.speed,
         ranking.speed4h,
         ranking.speed24h,
@@ -135,7 +132,6 @@ async function insertData(allData) {
       );
     })
   );
-  // console.log(JSON.stringify(response, null, 4));
 
   await stmt3.finalize();
 }

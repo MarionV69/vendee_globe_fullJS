@@ -5,8 +5,6 @@ import Box from "@mui/material/Box";
 import RankingBox from "./components/RankingBox";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <Container maxWidth="lg">
       <Box sx={{ mt: 4 }}>

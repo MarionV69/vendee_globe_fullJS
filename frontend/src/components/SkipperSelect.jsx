@@ -5,13 +5,15 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
+// import FilterDateSelect from "./FilterDateSelect";
 
-export default function SkipperSelect() {
-  const [skipper, setSkipper] = useState("");
-  const [skippers, setSkippers] = useState();
+export default function SkipperSelect({ skipperId, onSelectChange }) {
+  const [skippers, setSkippers] = useState([]);
+  // const [selectedDate, setSelectedDate] = useState();
 
   const handleChange = (event) => {
-    setSkipper(event.target.value);
+    // setSelectedDate();
+    onSelectChange(event.target.value);
   };
 
   useEffect(() => {
@@ -20,7 +22,7 @@ export default function SkipperSelect() {
         const json = await (
           await fetch("http://localhost:3000/skipper")
         ).json();
-        setSkippers(json);
+        setSkippers([...json]);
       } catch (error) {
         console.log(error);
       }
@@ -29,27 +31,33 @@ export default function SkipperSelect() {
   }, []);
 
   return (
-    <Box sx={{ minWidth: 120 }}>
-      <div className=""></div>
-      {!skippers ? (
-        "Loading..."
-      ) : (
-        <FormControl fullWidth>
-          <InputLabel id="skipper-select-label">Skippers</InputLabel>
-          <Select
-            labelId="skipper-select-label"
-            id="skipper-select"
-            value={skipper}
-            label="Skipper"
-            onChange={handleChange}
-          >
-            {skippers.map((skipper) => (
-              <MenuItem value={skipper.id}>{skipper.name}</MenuItem>
-            ))}
-            ;
-          </Select>
-        </FormControl>
-      )}
-    </Box>
+    <>
+      <Box sx={{ minWidth: 120 }}>
+        {skippers.length === 0 ? (
+          "Loading..."
+        ) : (
+          <FormControl fullWidth>
+            <InputLabel id="skipper-select-label">Skippers</InputLabel>
+            <Select
+              labelId="skipper-select-label"
+              id="skipper-select"
+              value={skipperId ?? ""}
+              label="Skipper"
+              onChange={handleChange}
+            >
+              {skippers.map((skipper) => (
+                <MenuItem key={skipper.id} value={skipper.id}>
+                  {skipper.name}
+                </MenuItem>
+              ))}
+              ;
+            </Select>
+          </FormControl>
+        )}
+      </Box>
+      {/* {skipperId && (
+        <FilterDateSelect skipperId={skipperId} date={selectedDate} />
+      )} */}
+    </>
   );
 }

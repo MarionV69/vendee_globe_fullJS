@@ -26,6 +26,12 @@ app.get("/skipper/:skipperId(\\d+)", async (req, res) => {
   );
 });
 
+// Get all timestamp
+
+app.get("/timestamp", async (req, res) => {
+  res.json(await db.get(`SELECT DISTINCT timestamp FROM ranking`));
+});
+
 // Get rankings:
 //    - path => /ranking
 //    - params timestamp and/or skipper
@@ -73,3 +79,5 @@ app.get("/ranking", async (req, res) => {
 app.listen(port, () => {
   console.log(`App listening on port ${port}`);
 });
+
+// Get all timestamp

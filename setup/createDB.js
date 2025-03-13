@@ -1,5 +1,5 @@
-// import sqlite3 from "sqlite3";
 import { Database } from "sqlite-async";
+// import sqlite3 from "sqlite3";
 import { existsSync } from "fs";
 
 export const DATABASE_FILE = "vendeeglobe.db";
@@ -9,7 +9,7 @@ export const db = new Database();
 
 if (needToSetup) {
   console.log("setup");
-  await db.open(DATABASE_FILE);
+  await db.open(`../${DATABASE_FILE}`);
   try {
     await db.run(
       `CREATE TABLE IF NOT EXISTS skipper
@@ -31,7 +31,8 @@ if (needToSetup) {
             (
                 skipper_id INT NOT NULL,
                 timestamp INT NOT NULL,
-                rank INT NOT NULL,
+                is_arrived INT NOT NULL,
+                rank INT,
                 latitude VARCHAR(50),
                 longitude VARCHAR(50),
                 heading_degree VARCHAR(50),
@@ -50,7 +51,7 @@ if (needToSetup) {
                 over_ortho_distance VARCHAR(50),
                 over_ground_speed VARCHAR(50),
                 over_ground_distance VARCHAR(50),
-                PRIMARY KEY (skipper_id, timestamp),
+                UNIQUE(skipper_id, timestamp),
                 FOREIGN KEY (skipper_id) REFERENCES skipper(id) ON DELETE CASCADE
             );`
     );
