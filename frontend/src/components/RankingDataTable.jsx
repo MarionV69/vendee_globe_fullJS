@@ -6,32 +6,52 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+
+const dateFormatter = new Intl.DateTimeFormat("fr", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 export default function RankingDataTable({ skipperId, date }) {
   const [rankings, setRankings] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function getRankings() {
+      setLoading(true);
       try {
         const json = await (
           await fetch(`http://localhost:3000/ranking?skipper=${skipperId}`)
         ).json();
         setRankings(json);
       } catch (error) {
-        console.log(error);
+        console.error(
+          "Erreur lors de la récupération des classements :",
+          error
+        );
+        setRankings([]);
+      } finally {
+        setLoading(false);
       }
     }
     if (skipperId) getRankings();
   }, [skipperId]);
 
   return (
-    <Box>
-      {rankings.length === 0 ? (
+    <Box mt={2}>
+      {!skipperId ? (
         <p>Sélectionnez un skipper pour retrouver tous ses classements !</p>
+      ) : loading ? (
+        <p>Chargement des données en cours...</p>
+      ) : rankings.length === 0 ? (
+        <p>Aucun classement trouvé pour ce skipper.</p>
       ) : (
         <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
+          <Table sx={{ minWidth: 650 }} aria-label="Classements du skipper">
             <TableHead>
               <TableRow>
                 <TableCell align="center">Date</TableCell>
@@ -62,13 +82,7 @@ export default function RankingDataTable({ skipperId, date }) {
                   sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                 >
                   <TableCell>
-                    {new Intl.DateTimeFormat("fr", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }).format(new Date(ranking.timestamp))}
+                    {dateFormatter.format(new Date(ranking.timestamp))}
                   </TableCell>
                   <TableCell>{ranking.rank ?? "Abandon"}</TableCell>
                   <TableCell align="center">
@@ -102,7 +116,7 @@ export default function RankingDataTable({ skipperId, date }) {
                     {ranking.distance_to_leader_nm ?? "-"}
                   </TableCell>
                   <TableCell align="center">
-                    {ranking.race_time ?? "-"}
+                    {ranking.arrival_date ?? "-"}
                   </TableCell>
                   <TableCell align="center">
                     {ranking.race_time ?? "-"}

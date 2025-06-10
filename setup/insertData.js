@@ -27,29 +27,31 @@ async function insertData(allData) {
 
       if (row.M && row.M.includes("premier")) continue;
 
+      const isArrived = row.B.includes("ARV");
+
       rankings.push({
         timeStamp: timeStamp,
         skipperName: name,
-        isArrived: row.B.includes("ARV") ? 1 : 0,
+        isArrived: isArrived ? 1 : 0,
         rank: parseInt(row.B) || null,
         latitude: row.F || null,
         longitude: row.G || null,
-        heading: row.H || null,
-        speed: !row.B.includes("ARV") ? row.I : null,
+        heading: !isArrived ? row.H : null,
+        speed: !isArrived ? row.I : null,
         speed4h: row.M || null,
-        speed24h: row.Q || null,
+        speed24h: !isArrived ? row.Q : null,
         distance4h: row.O || null,
         distance24h: row.S || null,
-        distanceToFinish: row.T || null,
-        distanceToLeader: row.U || null,
-        arrivalDate: row.H || null,
-        raceTime: row.B.includes("ARV") ? row.I : null,
+        distanceToFinish: !isArrived ? row.T : null,
+        distanceToLeader: !isArrived ? row.U : null,
+        arrivalDate: isArrived ? row.H : null,
+        raceTime: isArrived ? row.I : null,
         gapToFirst: row.N || null,
         gapToPrevious: row.P || null,
-        overOrthoSpeed: row.Q || null,
+        overOrthoSpeed: isArrived ? row.Q : null,
         overOrthoDistance: row.R || null,
-        overGroundSpeed: row.T || null,
-        overGroundDistance: row.U || null,
+        overGroundSpeed: isArrived ? row.T : null,
+        overGroundDistance: isArrived ? row.U : null,
       });
     }
   }
@@ -66,6 +68,7 @@ async function insertData(allData) {
     }
   }
   await stmt1.finalize();
+  console.log("stmt1 finalized");
 
   let skipperDatabase = {};
   const stmt2 = await db.prepare("SELECT id, name FROM skipper");
@@ -76,6 +79,7 @@ async function insertData(allData) {
     console.error("Error select skipper:", error);
   }
   await stmt2.finalize();
+  console.log("stmt2 finalized");
 
   const stmt3 = await db.prepare(
     `INSERT OR IGNORE INTO ranking (
@@ -134,6 +138,8 @@ async function insertData(allData) {
   );
 
   await stmt3.finalize();
+  console.log("stmt3 finalized");
+  console.log("Data successfully inserted");
 }
 
 /////////////////////////////////////////////////////
